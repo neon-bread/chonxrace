@@ -632,9 +632,9 @@
 
         const player = {
             x: ARENA_CENTER,
-            y: BASE_HEIGHT - 80,
-            width: 40,
-            height: 60,
+            y: BASE_HEIGHT - 120,
+            width: 125,
+            height: 187,
             tilt: 0,
             health: 67,
             speed: 1,
@@ -857,13 +857,16 @@
 
         function spawnTree() {
             const side = Math.random() < 0.5 ? 'left' : 'right';
-            const x = side === 'left' ? ARENA_LEFT + 15 : ARENA_RIGHT - 35;
+            // Start NARROW at horizon
+            const horizonOffset = side === 'left' ? 40 : ARENA_WIDTH - 40;
+            const x = ARENA_LEFT + horizonOffset;
             
             trees.push({
                 x: x,
-                y: BASE_HEIGHT / 2 - 20, // Start at horizon (center of screen)
-                scale: 0.1, // Start very small
-                speed: 1.5
+                y: BASE_HEIGHT / 2 - 20,
+                scale: 0.15,
+                speed: 1.5,
+                side: side
             });
         }
 
@@ -1023,20 +1026,31 @@
             
             trees = trees.filter(tree => {
                 tree.y += tree.speed * currentSpeed;
-                // Scale from 0.1 at horizon (mid screen) to 1.5 at bottom (larger)
+                
+                // Upside-down funnel: NARROW at top, WIDE at bottom
+                // progressFromHorizon: 0 at horizon, 1 at bottom
                 const progressFromHorizon = (tree.y - BASE_HEIGHT / 2) / (BASE_HEIGHT / 2);
-                tree.scale = 0.1 + (progressFromHorizon * 1.4);
+                const wideningFactor = 1 + (progressFromHorizon * 1.5); // WIDENS to 2.5x original width
+                
+                if (tree.side === 'left') {
+                    tree.x = ARENA_LEFT + (40 * wideningFactor);
+                } else {
+                    tree.x = ARENA_RIGHT - (40 * wideningFactor);
+                }
+                
+                // Scale from 0.15 at horizon to 2.5 at bottom (MUCH larger)
+                tree.scale = 0.15 + (progressFromHorizon * 2.35);
+                
                 return tree.y < BASE_HEIGHT + 50;
             });
             
             logs = logs.filter(log => {
                 log.y += log.speed * currentSpeed;
-                // Scale from 0.15 at horizon to 1.2 at bottom
                 const progressFromHorizon = (log.y - BASE_HEIGHT / 2) / (BASE_HEIGHT / 2);
-                log.scale = 0.15 + (progressFromHorizon * 1.05);
+                log.scale = 0.2 + (progressFromHorizon * 1.8);
                 
-                const logSize = 60 * log.scale; // Increased base size from 40 to 60
-                if (log.y > player.y - 40 && log.y < player.y + 40 &&
+                const logSize = 120 * log.scale;
+                if (log.y > player.y - 80 && log.y < player.y + 80 &&
                     Math.abs(log.x - player.x) < logSize / 2 + player.width / 2) {
                     player.health -= 4;
                     player.slowdownTimer = 1000;
@@ -1050,15 +1064,14 @@
             
             rats = rats.filter(rat => {
                 rat.y += rat.speed * currentSpeed;
-                // Scale from 0.15 at horizon to 1.2 at bottom
                 const progressFromHorizon = (rat.y - BASE_HEIGHT / 2) / (BASE_HEIGHT / 2);
-                rat.scale = 0.15 + (progressFromHorizon * 1.05);
+                rat.scale = 0.2 + (progressFromHorizon * 1.8);
                 
                 const dx = player.x - rat.x;
                 rat.x += Math.sign(dx) * 0.5;
                 
-                const ratSize = 60 * rat.scale; // Increased base size from 40 to 60
-                if (rat.y > player.y - 40 && rat.y < player.y + 40 &&
+                const ratSize = 120 * rat.scale;
+                if (rat.y > player.y - 80 && rat.y < player.y + 80 &&
                     Math.abs(rat.x - player.x) < ratSize / 2 + player.width / 2) {
                     player.health -= 7;
                     player.slowdownTimer = 1500;
@@ -1072,13 +1085,12 @@
             
             blueberries = blueberries.filter(berry => {
                 berry.y += berry.speed * currentSpeed;
-                // Scale from 0.2 at horizon to 1.0 at bottom
                 const progressFromHorizon = (berry.y - BASE_HEIGHT / 2) / (BASE_HEIGHT / 2);
-                berry.scale = 0.2 + (progressFromHorizon * 0.8);
+                berry.scale = 0.25 + (progressFromHorizon * 1.25);
                 berry.floatOffset += 0.1;
                 
-                const berrySize = 25 * berry.scale; // Increased base size from 15 to 25
-                if (berry.y > player.y - 40 && berry.y < player.y + 40 &&
+                const berrySize = 50 * berry.scale;
+                if (berry.y > player.y - 80 && berry.y < player.y + 80 &&
                     Math.abs(berry.x - player.x) < berrySize + player.width / 2) {
                     if (player.health < 67) {
                         player.health++;
@@ -1093,13 +1105,12 @@
             
             strawberries = strawberries.filter(berry => {
                 berry.y += berry.speed * currentSpeed;
-                // Scale from 0.2 at horizon to 1.0 at bottom
                 const progressFromHorizon = (berry.y - BASE_HEIGHT / 2) / (BASE_HEIGHT / 2);
-                berry.scale = 0.2 + (progressFromHorizon * 0.8);
+                berry.scale = 0.25 + (progressFromHorizon * 1.25);
                 berry.floatOffset += 0.1;
                 
-                const berrySize = 25 * berry.scale; // Increased base size from 15 to 25
-                if (berry.y > player.y - 40 && berry.y < player.y + 40 &&
+                const berrySize = 50 * berry.scale;
+                if (berry.y > player.y - 80 && berry.y < player.y + 80 &&
                     Math.abs(berry.x - player.x) < berrySize + player.width / 2) {
                     player.speedBoostTimer = 1000;
                     playBoostSound();
@@ -1112,7 +1123,52 @@
             
             if (finishLine) {
                 finishLine.y += finishLine.speed * currentSpeed;
-                // Scale from 0.1 at horizon to 1.8 at bottom (very large banner)
+                const progressFromHorizon = (finishLine.y - BASE_HEIGHT / 2) / (BASE_HEIGHT / 2);
+                finishLine.scale = 0.1 + (progressFromHorizon * 2.4);
+                
+                if (finishLine.y > player.y) {
+                    gameState = 'win';
+                    playWinSound();
+                }
+            }
+            
+            projectiles = projectiles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                
+                for (let i = logs.length - 1; i >= 0; i--) {
+                    const log = logs[i];
+                    const logSize = 120 * log.scale;
+                    if (Math.abs(p.x - log.x) < logSize / 2 + p.size &&
+                        Math.abs(p.y - log.y) < logSize / 2 + p.size) {
+                        log.hits++;
+                        if (log.hits >= log.maxHits) {
+                            playExplosionSound();
+                            createParticles(log.x, log.y, '#8B4513', 15);
+                            logs.splice(i, 1);
+                        }
+                        return false;
+                    }
+                }
+                
+                for (let i = rats.length - 1; i >= 0; i--) {
+                    const rat = rats[i];
+                    const ratSize = 120 * rat.scale;
+                    if (Math.abs(p.x - rat.x) < ratSize / 2 + p.size &&
+                        Math.abs(p.y - rat.y) < ratSize / 2 + p.size) {
+                        rat.hits++;
+                        if (rat.hits >= rat.maxHits) {
+                            playRatDefeatSound();
+                            rat.rotation = Math.random() * 360;
+                            createParticles(rat.x, rat.y, '#ff00ff', 10);
+                            rats.splice(i, 1);
+                        }
+                        return false;
+                    }
+                }
+                
+                return p.x > ARENA_LEFT && p.x < ARENA_RIGHT && p.y > 0 && p.y < BASE_HEIGHT;
+            });
                 const progressFromHorizon = (finishLine.y - BASE_HEIGHT / 2) / (BASE_HEIGHT / 2);
                 finishLine.scale = 0.1 + (progressFromHorizon * 1.7);
                 
@@ -1202,28 +1258,28 @@
             ctx.fillRect(ARENA_RIGHT, 0, BASE_WIDTH - ARENA_RIGHT, BASE_HEIGHT);
             
             trees.forEach(tree => {
-                const size = 80 * tree.scale; // Increased from 60 to 80
+                const size = 150 * tree.scale;
                 if (sprites.tree && sprites.tree.complete) {
                     ctx.drawImage(sprites.tree, tree.x - size / 2, tree.y - size, size, size);
                 }
             });
             
             if (finishLine) {
-                const size = 250 * finishLine.scale; // Increased from 200 to 250
+                const size = 350 * finishLine.scale;
                 if (sprites.finishBanner && sprites.finishBanner.complete) {
                     ctx.drawImage(sprites.finishBanner, finishLine.x - size / 2, finishLine.y, size, size * 0.3);
                 }
             }
             
             logs.forEach(log => {
-                const size = 60 * log.scale; // Increased from 40 to 60
+                const size = 120 * log.scale;
                 if (sprites.log && sprites.log.complete) {
                     ctx.drawImage(sprites.log, log.x - size / 2, log.y - size / 2, size, size);
                 }
             });
             
             rats.forEach(rat => {
-                const size = 60 * rat.scale; // Increased from 40 to 60
+                const size = 120 * rat.scale;
                 if (sprites.rat && sprites.rat.complete) {
                     ctx.save();
                     ctx.translate(rat.x, rat.y);
@@ -1234,7 +1290,7 @@
             });
             
             blueberries.forEach(berry => {
-                const size = 25 * berry.scale; // Increased from 15 to 25
+                const size = 50 * berry.scale;
                 const floatY = Math.sin(berry.floatOffset) * 5;
                 if (sprites.blueberry && sprites.blueberry.complete) {
                     ctx.drawImage(sprites.blueberry, berry.x - size / 2, berry.y - size / 2 + floatY, size, size);
@@ -1242,7 +1298,7 @@
             });
             
             strawberries.forEach(berry => {
-                const size = 25 * berry.scale; // Increased from 15 to 25
+                const size = 50 * berry.scale;
                 const floatY = Math.sin(berry.floatOffset) * 5;
                 if (sprites.strawberry && sprites.strawberry.complete) {
                     ctx.drawImage(sprites.strawberry, berry.x - size / 2, berry.y - size / 2 + floatY, size, size);
