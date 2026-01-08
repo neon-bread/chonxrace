@@ -817,10 +817,13 @@
         });
 
         function startGame() {
+            console.log('startGame called');
             initAudioContext();
             document.getElementById('startButton').textContent = 'Loading...';
             
+            console.log('About to load assets');
             loadAssets(() => {
+                console.log('Assets loaded callback');
                 document.getElementById('titleScreen').classList.add('hidden');
                 document.getElementById('leftControls').classList.add('active');
                 document.getElementById('rightControls').classList.add('active');
@@ -834,6 +837,7 @@
                 countdownValue = 3;
                 countdownTimer = 0;
                 
+                console.log('Starting game loop');
                 startGameLoop();
             });
         }
