@@ -1173,14 +1173,6 @@
                 
                 return p.x > ARENA_LEFT && p.x < ARENA_RIGHT && p.y > 0 && p.y < BASE_HEIGHT;
             });
-                const progressFromHorizon = (finishLine.y - BASE_HEIGHT / 2) / (BASE_HEIGHT / 2);
-                finishLine.scale = 0.1 + (progressFromHorizon * 1.7);
-                
-                if (finishLine.y > player.y) {
-                    gameState = 'win';
-                    playWinSound();
-                }
-            }
             
             projectiles = projectiles.filter(p => {
                 p.x += p.vx;
@@ -1188,7 +1180,7 @@
                 
                 for (let i = logs.length - 1; i >= 0; i--) {
                     const log = logs[i];
-                    const logSize = 60 * log.scale; // Updated to match new size
+                    const logSize = 120 * log.scale;
                     if (Math.abs(p.x - log.x) < logSize / 2 + p.size &&
                         Math.abs(p.y - log.y) < logSize / 2 + p.size) {
                         log.hits++;
@@ -1203,7 +1195,7 @@
                 
                 for (let i = rats.length - 1; i >= 0; i--) {
                     const rat = rats[i];
-                    const ratSize = 60 * rat.scale; // Updated to match new size
+                    const ratSize = 120 * rat.scale;
                     if (Math.abs(p.x - rat.x) < ratSize / 2 + p.size &&
                         Math.abs(p.y - rat.y) < ratSize / 2 + p.size) {
                         rat.hits++;
