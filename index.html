@@ -868,11 +868,11 @@
 
         function spawnTree() {
             const side = Math.random() < 0.5 ? 'left' : 'right';
-            // Start narrow at horizon (closer to center)
+            // Start at actual horizon (top of screen)
             trees.push({
                 x: side === 'left' ? ARENA_LEFT + 60 : ARENA_RIGHT - 60,
-                y: BASE_HEIGHT / 2 - 20,
-                scale: 0.15,
+                y: 50, // Actual horizon line at top
+                scale: 0.1, // Start even smaller
                 speed: 1.5,
                 side: side
             });
@@ -1035,10 +1035,10 @@
             trees = trees.filter(tree => {
                 tree.y += tree.speed * currentSpeed;
                 
-                // Trees follow snow banks: narrow at horizon (60px inset), wide at bottom (10px inset)
-                const progressFromHorizon = (tree.y - BASE_HEIGHT / 2) / (BASE_HEIGHT / 2);
-                // Interpolate from 60px inset to 10px inset
-                const inset = 60 - (progressFromHorizon * 50); // 60 -> 10
+                // Trees SPREAD APART as they approach: 60px inset at horizon → 5px inset at bottom
+                const progressFromHorizon = (tree.y - 50) / (BASE_HEIGHT - 50);
+                // Start at 60px, end at 5px (spreading wider)
+                const inset = 60 - (progressFromHorizon * 55); // 60 → 5
                 
                 if (tree.side === 'left') {
                     tree.x = ARENA_LEFT + inset;
@@ -1046,8 +1046,8 @@
                     tree.x = ARENA_RIGHT - inset;
                 }
                 
-                // Scale from 0.15 at horizon to 2.5 at bottom
-                tree.scale = 0.15 + (progressFromHorizon * 2.35);
+                // Scale from 0.1 at horizon to 2.5 at bottom
+                tree.scale = 0.1 + (progressFromHorizon * 2.4);
                 
                 return tree.y < BASE_HEIGHT + 50;
             });
@@ -1210,8 +1210,8 @@
                 const bgWidth = BASE_WIDTH * bgZoom;
                 const bgHeight = BASE_HEIGHT * bgZoom;
                 const bgX = (BASE_WIDTH - bgWidth) / 2;
-                // Slow upward scroll based on game time
-                const bgY = (BASE_HEIGHT - bgHeight) / 2 - (gameTime * 0.01); // Slow scroll up
+                // Very slow upward scroll
+                const bgY = (BASE_HEIGHT - bgHeight) / 2 - (gameTime * 0.003);
                 ctx.drawImage(sprites.background, bgX, bgY, bgWidth, bgHeight);
             }
             
