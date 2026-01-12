@@ -868,11 +868,11 @@
 
         function spawnTree() {
             const side = Math.random() < 0.5 ? 'left' : 'right';
-            // Start at actual horizon (top of screen)
+            // Start close together near center of arena
             trees.push({
-                x: side === 'left' ? ARENA_LEFT + 60 : ARENA_RIGHT - 60,
-                y: 50, // Actual horizon line at top
-                scale: 0.1, // Start even smaller
+                x: side === 'left' ? ARENA_LEFT + 100 : ARENA_RIGHT - 100,
+                y: 50,
+                scale: 0.05, // Start MUCH smaller
                 speed: 1.5,
                 side: side
             });
@@ -1035,10 +1035,10 @@
             trees = trees.filter(tree => {
                 tree.y += tree.speed * currentSpeed;
                 
-                // Trees SPREAD APART as they approach: 60px inset at horizon → 5px inset at bottom
+                // Trees SPREAD APART: start close together (100px from edges), end spread wide (5px from edges)
                 const progressFromHorizon = (tree.y - 50) / (BASE_HEIGHT - 50);
-                // Start at 60px, end at 5px (spreading wider)
-                const inset = 60 - (progressFromHorizon * 55); // 60 → 5
+                // DECREASE inset as they approach: 100px → 5px
+                const inset = 100 - (progressFromHorizon * 95); // 100 → 5
                 
                 if (tree.side === 'left') {
                     tree.x = ARENA_LEFT + inset;
@@ -1046,8 +1046,8 @@
                     tree.x = ARENA_RIGHT - inset;
                 }
                 
-                // Scale from 0.1 at horizon to 2.5 at bottom
-                tree.scale = 0.1 + (progressFromHorizon * 2.4);
+                // Scale from TINY (0.05) at horizon to large (2.5) at bottom
+                tree.scale = 0.05 + (progressFromHorizon * 2.45);
                 
                 return tree.y < BASE_HEIGHT + 50;
             });
