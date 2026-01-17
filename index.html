@@ -1035,12 +1035,12 @@
             trees = trees.filter(tree => {
                 tree.y += tree.speed * currentSpeed;
                 
-                // Trees DIVERGE from center: start at ARENA_CENTER, move toward edges
+                // Trees DIVERGE from center to FAR edges
                 const progressFromHorizon = (tree.y - 50) / (BASE_HEIGHT - 50);
                 
-                // Calculate distance from center based on progress (0 at center → max at edges)
-                const maxDistanceFromCenter = (ARENA_WIDTH / 2) - 5; // Leave 5px margin at edges
-                const distanceFromCenter = progressFromHorizon * maxDistanceFromCenter;
+                // Use FULL arena width - trees go all the way to edges
+                const halfArenaWidth = ARENA_WIDTH / 2;
+                const distanceFromCenter = progressFromHorizon * halfArenaWidth;
                 
                 if (tree.side === 'left') {
                     tree.x = ARENA_CENTER - distanceFromCenter;
