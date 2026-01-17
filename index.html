@@ -645,11 +645,12 @@
             tilt: 0,
             health: 100,
             ammo: 67,
-            speed: 1,
+            speed: 1.5,
             speedBoostTimer: 0,
             slowdownTimer: 0,
             score: 0, // Track score during gameplay
-            perfectRun: true // Track if player has taken no damage
+            perfectRun: true, // Track if player has taken no damage
+            ratsKilled: 0 // Track rat kills for speed scaling
         };
 
         let gameTime = 0;
@@ -934,9 +935,11 @@
         }
 
         function spawnFinishLine() {
+            // Distance-based finish line: -10800 = ~90 seconds at base 1.5x speed
+            // Will finish faster with rat kills, slower with hits
             finishLine = {
                 x: ARENA_CENTER,
-                y: -100,
+                y: -10800,
                 speed: 2
             };
         }
@@ -977,11 +980,8 @@
                     spawnTree();
                     spawnTree();
                     
-                    setTimeout(() => {
-                        if (gameState === 'playing') {
-                            spawnFinishLine();
-                        }
-                    }, 50000);
+                    // Spawn finish line at fixed distance instead of time
+                    spawnFinishLine();
                 }
             }
         }
@@ -989,8 +989,8 @@
         function updatePlaying(deltaTime) {
             gameTime += deltaTime;
             
-            // Aggressive speed increase: starts at 1.0x, reaches 3.5x at 60 seconds
-            const speedMultiplier = Math.min(1.0 + (gameTime / 60000) * 2.5, 3.5);
+            // Speed increases with each rat killed: 0.15x per rat, max 3.5x
+            const speedMultiplier = Math.min(1.0 + (player.ratsKilled * 0.15), 3.5);
             
             let currentSpeed = player.speed * speedMultiplier;
             
@@ -1031,8 +1031,8 @@
             else player.tilt = 0;
             
             if (Math.random() < 0.15 * currentSpeed) spawnTree(); // Much more frequent
-            if (Math.random() < 0.01 * currentSpeed) spawnLog();
-            if (Math.random() < 0.008 * currentSpeed && rats.length < 7) spawnRat();
+            if (Math.random() < 0.005 * currentSpeed) spawnLog(); // Reduced from 0.01
+            if (Math.random() < 0.02 * currentSpeed && rats.length < 10) spawnRat(); // Increased from 0.008, max from 7 to 10
             if (Math.random() < 0.015 * currentSpeed) spawnBlueberry();
             if (Math.random() < 0.005 * currentSpeed) spawnStrawberry();
             
@@ -1169,6 +1169,7 @@
                         rat.hits++;
                         if (rat.hits >= rat.maxHits) {
                             player.score += 10; // 10 points for destroying rat
+                            player.ratsKilled++; // Increase speed with each rat kill
                             playRatDefeatSound();
                             rat.rotation = Math.random() * 360;
                             createParticles(rat.x, rat.y, '#ff00ff', 10);
@@ -1217,17 +1218,6 @@
             // Light path in middle with scrolling stripes
             ctx.fillStyle = '#e8f0ff';
             ctx.fillRect(ARENA_LEFT, 0, ARENA_WIDTH, BASE_HEIGHT);
-            
-            // Scrolling center line (dashed)
-            ctx.strokeStyle = '#ffff00';
-            ctx.lineWidth = 3;
-            ctx.setLineDash([20, 20]);
-            ctx.lineDashOffset = -(gameTime * 0.1) % 40;
-            ctx.beginPath();
-            ctx.moveTo(ARENA_CENTER, 0);
-            ctx.lineTo(ARENA_CENTER, BASE_HEIGHT);
-            ctx.stroke();
-            ctx.setLineDash([]);
             
             // Edge lines
             ctx.strokeStyle = '#aabbcc';
