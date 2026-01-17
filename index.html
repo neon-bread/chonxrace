@@ -885,7 +885,7 @@
                 y: -50,
                 speed: 2,
                 hits: 0,
-                maxHits: 3 // Reduced from 5
+                maxHits: 1 // 1 hit to destroy
             });
         }
 
@@ -897,7 +897,7 @@
                 y: -50,
                 speed: 2.5,
                 hits: 0,
-                maxHits: 4, // Reduced from 7
+                maxHits: 1, // 1 hit to destroy
                 rotation: 0
             });
         }
@@ -1037,7 +1037,7 @@
                 const logSize = 40;
                 if (Math.abs(log.y - player.y) < logSize / 2 + player.height / 2 &&
                     Math.abs(log.x - player.x) < logSize / 2 + player.width / 2) {
-                    player.health -= 5; // Reduced from 10
+                    player.health -= 1; // 1 HP damage
                     player.slowdownTimer = 1000;
                     playCollisionSound();
                     createParticles(log.x, log.y, '#8B4513', 8);
@@ -1057,7 +1057,7 @@
                 const ratSize = 50;
                 if (Math.abs(rat.y - player.y) < ratSize / 2 + player.height / 2 &&
                     Math.abs(rat.x - player.x) < ratSize / 2 + player.width / 2) {
-                    player.health -= 8; // Reduced from 15
+                    player.health -= 1; // 1 HP damage
                     player.slowdownTimer = 1500;
                     playCollisionSound();
                     createParticles(rat.x, rat.y, '#ff00ff', 12);
