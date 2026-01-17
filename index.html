@@ -639,11 +639,12 @@
 
         const player = {
             x: ARENA_CENTER,
-            y: BASE_HEIGHT - 100, // Near bottom
-            width: 80, // Smaller for top-down view
-            height: 80,
+            y: BASE_HEIGHT - 100,
+            width: 50, // Smaller
+            height: 50,
             tilt: 0,
-            health: 67,
+            health: 100, // Separate health now
+            ammo: 67, // Blueberries are ammo only
             speed: 1,
             speedBoostTimer: 0,
             slowdownTimer: 0
@@ -850,9 +851,9 @@
 
         function shoot() {
             if (gameState !== 'playing') return;
-            if (player.health <= 0) return;
+            if (player.ammo <= 0) return; // Use ammo, not health
             
-            player.health--;
+            player.ammo--; // Decrease ammo
             playShootSound();
             
             const angleRad = (shootAngle - 90) * Math.PI / 180;
@@ -867,10 +868,10 @@
 
         function spawnTree() {
             const side = Math.random() < 0.5 ? 'left' : 'right';
-            // Trees spawn at top, positioned at edges
+            // Trees at the very edges of the arena
             trees.push({
-                x: side === 'left' ? ARENA_LEFT + 40 : ARENA_RIGHT - 40,
-                y: -50, // Start above screen
+                x: side === 'left' ? ARENA_LEFT + 15 : ARENA_RIGHT - 15,
+                y: -30,
                 speed: 2,
                 side: side
             });
@@ -1017,7 +1018,7 @@
             else if (moveX > 0.1) player.tilt = 0.3;
             else player.tilt = 0;
             
-            if (Math.random() < 0.02 * currentSpeed) spawnTree();
+            if (Math.random() < 0.15 * currentSpeed) spawnTree(); // Much more frequent
             if (Math.random() < 0.01 * currentSpeed) spawnLog();
             if (Math.random() < 0.008 * currentSpeed && rats.length < 7) spawnRat();
             if (Math.random() < 0.015 * currentSpeed) spawnBlueberry();
@@ -1033,10 +1034,10 @@
             logs = logs.filter(log => {
                 log.y += log.speed * currentSpeed;
                 
-                const logSize = 60;
+                const logSize = 40; // Smaller
                 if (Math.abs(log.y - player.y) < logSize / 2 + player.height / 2 &&
                     Math.abs(log.x - player.x) < logSize / 2 + player.width / 2) {
-                    player.health -= 4;
+                    player.health -= 10; // More damage
                     player.slowdownTimer = 1000;
                     playCollisionSound();
                     createParticles(log.x, log.y, '#8B4513', 8);
@@ -1053,10 +1054,10 @@
                 const dx = player.x - rat.x;
                 rat.x += Math.sign(dx) * 0.8;
                 
-                const ratSize = 80;
+                const ratSize = 50; // Smaller
                 if (Math.abs(rat.y - player.y) < ratSize / 2 + player.height / 2 &&
                     Math.abs(rat.x - player.x) < ratSize / 2 + player.width / 2) {
-                    player.health -= 7;
+                    player.health -= 15; // More damage
                     player.slowdownTimer = 1500;
                     playCollisionSound();
                     createParticles(rat.x, rat.y, '#ff00ff', 12);
@@ -1066,16 +1067,16 @@
                 return rat.y < BASE_HEIGHT + 50;
             });
             
-            // Berries scroll down
+            // Blueberries restore AMMO only (not health)
             blueberries = blueberries.filter(berry => {
                 berry.y += berry.speed * currentSpeed;
                 berry.floatOffset += 0.1;
                 
-                const berrySize = 30;
+                const berrySize = 20; // Smaller
                 if (Math.abs(berry.y - player.y) < berrySize / 2 + player.height / 2 &&
                     Math.abs(berry.x - player.x) < berrySize / 2 + player.width / 2) {
-                    if (player.health < 67) {
-                        player.health++;
+                    if (player.ammo < 67) {
+                        player.ammo++; // Restore ammo, not health
                         playCollectSound();
                         createParticles(berry.x, berry.y, '#0000ff', 6);
                     }
@@ -1089,7 +1090,7 @@
                 berry.y += berry.speed * currentSpeed;
                 berry.floatOffset += 0.1;
                 
-                const berrySize = 30;
+                const berrySize = 20; // Smaller
                 if (Math.abs(berry.y - player.y) < berrySize / 2 + player.height / 2 &&
                     Math.abs(berry.x - player.x) < berrySize / 2 + player.width / 2) {
                     player.speedBoostTimer = 1000;
@@ -1117,7 +1118,7 @@
                 
                 for (let i = logs.length - 1; i >= 0; i--) {
                     const log = logs[i];
-                    const logSize = 60;
+                    const logSize = 40;
                     if (Math.abs(p.x - log.x) < logSize / 2 + p.size &&
                         Math.abs(p.y - log.y) < logSize / 2 + p.size) {
                         log.hits++;
@@ -1132,7 +1133,7 @@
                 
                 for (let i = rats.length - 1; i >= 0; i--) {
                     const rat = rats[i];
-                    const ratSize = 80;
+                    const ratSize = 50;
                     if (Math.abs(p.x - rat.x) < ratSize / 2 + p.size &&
                         Math.abs(p.y - rat.y) < ratSize / 2 + p.size) {
                         rat.hits++;
@@ -1213,7 +1214,7 @@
             ctx.fillRect(ARENA_RIGHT, 0, BASE_WIDTH - ARENA_RIGHT, BASE_HEIGHT);
             
             trees.forEach(tree => {
-                const size = 60; // Fixed size
+                const size = 40; // Smaller
                 if (sprites.tree && sprites.tree.complete) {
                     ctx.drawImage(sprites.tree, tree.x - size / 2, tree.y - size / 2, size, size);
                 }
@@ -1228,14 +1229,14 @@
             }
             
             logs.forEach(log => {
-                const size = 60;
+                const size = 40; // Smaller
                 if (sprites.log && sprites.log.complete) {
                     ctx.drawImage(sprites.log, log.x - size / 2, log.y - size / 2, size, size);
                 }
             });
             
             rats.forEach(rat => {
-                const size = 80;
+                const size = 50; // Smaller
                 if (sprites.rat && sprites.rat.complete) {
                     ctx.save();
                     ctx.translate(rat.x, rat.y);
@@ -1246,16 +1247,16 @@
             });
             
             blueberries.forEach(berry => {
-                const size = 30;
-                const floatY = Math.sin(berry.floatOffset) * 3;
+                const size = 20; // Smaller
+                const floatY = Math.sin(berry.floatOffset) * 2;
                 if (sprites.blueberry && sprites.blueberry.complete) {
                     ctx.drawImage(sprites.blueberry, berry.x - size / 2, berry.y - size / 2 + floatY, size, size);
                 }
             });
             
             strawberries.forEach(berry => {
-                const size = 30;
-                const floatY = Math.sin(berry.floatOffset) * 3;
+                const size = 20; // Smaller
+                const floatY = Math.sin(berry.floatOffset) * 2;
                 if (sprites.strawberry && sprites.strawberry.complete) {
                     ctx.drawImage(sprites.strawberry, berry.x - size / 2, berry.y - size / 2 + floatY, size, size);
                 }
@@ -1302,25 +1303,42 @@
             ctx.textAlign = 'left';
             ctx.fillText(`TIME: ${timeString}`, hudX, hudY);
             
+            // Health bar
             const barWidth = 80;
-            const barHeight = 12;
-            const barX = hudX;
-            const barY = hudY + 20;
+            const barHeight = 10;
+            const healthBarY = hudY + 20;
             
             ctx.fillStyle = '#333';
-            ctx.fillRect(barX, barY, barWidth, barHeight);
+            ctx.fillRect(hudX, healthBarY, barWidth, barHeight);
             
-            const healthPercent = player.health / 67;
-            ctx.fillStyle = healthPercent > 0.5 ? '#0000ff' : (healthPercent > 0.25 ? '#ffff00' : '#ff0000');
-            ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+            const healthPercent = player.health / 100;
+            ctx.fillStyle = healthPercent > 0.5 ? '#00ff00' : (healthPercent > 0.25 ? '#ffff00' : '#ff0000');
+            ctx.fillRect(hudX, healthBarY, barWidth * healthPercent, barHeight);
             
             ctx.strokeStyle = '#fff';
-            ctx.strokeRect(barX, barY, barWidth, barHeight);
+            ctx.strokeRect(hudX, healthBarY, barWidth, barHeight);
             
             ctx.fillStyle = '#fff';
-            ctx.font = '8px "Press Start 2P"';
+            ctx.font = '7px "Press Start 2P"';
             ctx.textAlign = 'center';
-            ctx.fillText(player.health.toString(), barX + barWidth / 2, barY + 10);
+            ctx.fillText(Math.floor(player.health).toString(), hudX + barWidth / 2, healthBarY + 8);
+            
+            // Ammo bar (blue for blueberries)
+            const ammoBarY = healthBarY + 15;
+            
+            ctx.fillStyle = '#333';
+            ctx.fillRect(hudX, ammoBarY, barWidth, barHeight);
+            
+            const ammoPercent = player.ammo / 67;
+            ctx.fillStyle = '#0000ff';
+            ctx.fillRect(hudX, ammoBarY, barWidth * ammoPercent, barHeight);
+            
+            ctx.strokeStyle = '#fff';
+            ctx.strokeRect(hudX, ammoBarY, barWidth, barHeight);
+            
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'center';
+            ctx.fillText(player.ammo.toString(), hudX + barWidth / 2, ammoBarY + 8);
             
             if (player.speedBoostTimer > 0) {
                 ctx.fillStyle = '#ff0000';
