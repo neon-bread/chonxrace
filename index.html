@@ -987,8 +987,8 @@
         function updatePlaying(deltaTime) {
             gameTime += deltaTime;
             
-            // Progressive speed increase: starts at 1.0x, reaches 2.0x at 60 seconds
-            const speedMultiplier = Math.min(1.0 + (gameTime / 60000), 2.0);
+            // Aggressive speed increase: starts at 1.0x, reaches 3.5x at 60 seconds
+            const speedMultiplier = Math.min(1.0 + (gameTime / 60000) * 2.5, 3.5);
             
             let currentSpeed = player.speed * speedMultiplier;
             
