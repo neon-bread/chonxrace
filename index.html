@@ -640,14 +640,16 @@
         const player = {
             x: ARENA_CENTER,
             y: BASE_HEIGHT - 100,
-            width: 50, // Smaller
+            width: 50,
             height: 50,
             tilt: 0,
-            health: 100, // Separate health now
-            ammo: 67, // Blueberries are ammo only
+            health: 100,
+            ammo: 67,
             speed: 1,
             speedBoostTimer: 0,
-            slowdownTimer: 0
+            slowdownTimer: 0,
+            score: 0, // Track score during gameplay
+            perfectRun: true // Track if player has taken no damage
         };
 
         let gameTime = 0;
@@ -1047,7 +1049,8 @@
                 const logSize = 40;
                 if (Math.abs(log.y - player.y) < logSize / 2 + player.height / 2 &&
                     Math.abs(log.x - player.x) < logSize / 2 + player.width / 2) {
-                    player.health -= 1; // 1 HP damage
+                    player.health -= 1;
+                    player.perfectRun = false; // Lost perfect run
                     player.slowdownTimer = 1000;
                     playCollisionSound();
                     createParticles(log.x, log.y, '#8B4513', 8);
@@ -1082,6 +1085,7 @@
                 if (Math.abs(rat.y - player.y) < ratSize / 2 + player.height / 2 &&
                     Math.abs(rat.x - player.x) < ratSize / 2 + player.width / 2) {
                     player.health -= 1;
+                    player.perfectRun = false; // Lost perfect run
                     player.slowdownTimer = 1500;
                     playCollisionSound();
                     createParticles(rat.x, rat.y, '#ff00ff', 12);
@@ -1114,10 +1118,11 @@
                 berry.y += berry.speed * currentSpeed;
                 berry.floatOffset += 0.1;
                 
-                const berrySize = 20; // Smaller
+                const berrySize = 20;
                 if (Math.abs(berry.y - player.y) < berrySize / 2 + player.height / 2 &&
                     Math.abs(berry.x - player.x) < berrySize / 2 + player.width / 2) {
                     player.speedBoostTimer = 1000;
+                    player.score += 5; // 5 points for strawberry
                     playBoostSound();
                     createParticles(berry.x, berry.y, '#ff0000', 8);
                     return false;
@@ -1147,6 +1152,7 @@
                         Math.abs(p.y - log.y) < logSize / 2 + p.size) {
                         log.hits++;
                         if (log.hits >= log.maxHits) {
+                            player.score += 5; // 5 points for destroying log
                             playExplosionSound();
                             createParticles(log.x, log.y, '#8B4513', 15);
                             logs.splice(i, 1);
@@ -1162,6 +1168,7 @@
                         Math.abs(p.y - rat.y) < ratSize / 2 + p.size) {
                         rat.hits++;
                         if (rat.hits >= rat.maxHits) {
+                            player.score += 10; // 10 points for destroying rat
                             playRatDefeatSound();
                             rat.rotation = Math.random() * 360;
                             createParticles(rat.x, rat.y, '#ff00ff', 10);
@@ -1327,6 +1334,10 @@
             ctx.textAlign = 'left';
             ctx.fillText(`TIME: ${timeString}`, hudX, hudY);
             
+            // Score display
+            ctx.fillStyle = '#00ff00';
+            ctx.fillText(`SCORE: ${player.score}`, hudX, hudY + 60);
+            
             // Health bar
             const barWidth = 80;
             const barHeight = 10;
@@ -1395,14 +1406,26 @@
             const seconds = Math.floor(finalTime % 60);
             const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
             
-            let penalty = 0;
-            if (finalTime > 67) {
-                penalty = 5;
+            // Calculate final score
+            let finalScore = player.score; // Start with gameplay score
+            
+            // Bonus for leftover ammo
+            const ammoBonus = player.ammo * 2;
+            finalScore += ammoBonus;
+            
+            // Perfect run bonus
+            let perfectBonus = 0;
+            if (player.perfectRun) {
+                perfectBonus = 100;
+                finalScore += perfectBonus;
             }
             
-            const baseScore = Math.floor((67 - finalTime) * 10);
-            const berryBonus = player.health * 10;
-            const finalScore = Math.max(0, baseScore + berryBonus - (penalty * 100));
+            // Time penalty
+            let penalty = 0;
+            if (finalTime > 67) {
+                penalty = Math.floor((finalTime - 67) * 5);
+                finalScore = Math.max(0, finalScore - penalty);
+            }
             
             const titleElement = document.getElementById('endTitle');
             if (gameState === 'win') {
@@ -1412,10 +1435,15 @@
             }
             
             let statsHTML = `<p>TIME: ${timeString}</p>`;
-            if (penalty > 0) {
-                statsHTML += `<p>PENALTY: -${penalty}s</p>`;
+            statsHTML += `<p>GAMEPLAY: ${player.score} pts</p>`;
+            statsHTML += `<p>AMMO BONUS: ${ammoBonus} pts</p>`;
+            if (perfectBonus > 0) {
+                statsHTML += `<p>PERFECT RUN: +${perfectBonus} pts!</p>`;
             }
-            statsHTML += `<p>BERRIES LEFT: ${player.health}</p><p>SCORE: ${finalScore}</p>`;
+            if (penalty > 0) {
+                statsHTML += `<p>TIME PENALTY: -${penalty} pts</p>`;
+            }
+            statsHTML += `<p>FINAL SCORE: ${finalScore}</p>`;
             
             document.getElementById('endStats').innerHTML = statsHTML;
             document.getElementById('endScreen').classList.add('active');
