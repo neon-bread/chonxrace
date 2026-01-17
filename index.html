@@ -639,9 +639,9 @@
 
         const player = {
             x: ARENA_CENTER,
-            y: BASE_HEIGHT - 120,
-            width: 125,
-            height: 187,
+            y: BASE_HEIGHT - 100, // Near bottom
+            width: 80, // Smaller for top-down view
+            height: 80,
             tilt: 0,
             health: 67,
             speed: 1,
@@ -650,7 +650,6 @@
         };
 
         let gameTime = 0;
-        let bgZoom = 1.0;
 
         let trees = [];
         let logs = [];
@@ -868,12 +867,11 @@
 
         function spawnTree() {
             const side = Math.random() < 0.5 ? 'left' : 'right';
-            // Both trees start at horizontal CENTER
+            // Trees spawn at top, positioned at edges
             trees.push({
-                x: ARENA_CENTER,
-                y: 50,
-                scale: 0.05,
-                speed: 1.5,
+                x: side === 'left' ? ARENA_LEFT + 40 : ARENA_RIGHT - 40,
+                y: -50, // Start above screen
+                speed: 2,
                 side: side
             });
         }
@@ -883,9 +881,8 @@
             
             logs.push({
                 x: x,
-                y: BASE_HEIGHT / 2 - 20, // Start at horizon
-                scale: 0.15, // Start very small
-                speed: 1.5,
+                y: -50,
+                speed: 2,
                 hits: 0,
                 maxHits: 5
             });
@@ -896,9 +893,8 @@
             
             rats.push({
                 x: x,
-                y: BASE_HEIGHT / 2 - 20, // Start at horizon
-                scale: 0.15, // Start very small
-                speed: 2,
+                y: -50,
+                speed: 2.5,
                 hits: 0,
                 maxHits: 7,
                 rotation: 0
@@ -910,9 +906,8 @@
             
             blueberries.push({
                 x: x,
-                y: BASE_HEIGHT / 2 - 10, // Start at horizon
-                scale: 0.2, // Start small
-                speed: 1.5,
+                y: -30,
+                speed: 2,
                 floatOffset: Math.random() * Math.PI * 2
             });
         }
@@ -922,9 +917,8 @@
             
             strawberries.push({
                 x: x,
-                y: BASE_HEIGHT / 2 - 10, // Start at horizon
-                scale: 0.2, // Start small
-                speed: 1.5,
+                y: -30,
+                speed: 2,
                 floatOffset: Math.random() * Math.PI * 2
             });
         }
@@ -932,9 +926,8 @@
         function spawnFinishLine() {
             finishLine = {
                 x: ARENA_CENTER,
-                y: BASE_HEIGHT / 2 - 30, // Start at horizon
-                scale: 0.1, // Start very small
-                speed: 1.5
+                y: -100,
+                speed: 2
             };
         }
 
@@ -1024,43 +1017,24 @@
             else if (moveX > 0.1) player.tilt = 0.3;
             else player.tilt = 0;
             
-            bgZoom = 1.0 + (gameTime / 60000) * 0.15;
-            
             if (Math.random() < 0.02 * currentSpeed) spawnTree();
             if (Math.random() < 0.01 * currentSpeed) spawnLog();
             if (Math.random() < 0.008 * currentSpeed && rats.length < 7) spawnRat();
             if (Math.random() < 0.015 * currentSpeed) spawnBlueberry();
             if (Math.random() < 0.005 * currentSpeed) spawnStrawberry();
             
+            // Trees just scroll down (static positions at edges)
             trees = trees.filter(tree => {
                 tree.y += tree.speed * currentSpeed;
-                
-                // Trees DIVERGE from center to FAR edges
-                const progressFromHorizon = (tree.y - 50) / (BASE_HEIGHT - 50);
-                
-                // Use FULL arena width - trees go all the way to edges
-                const halfArenaWidth = ARENA_WIDTH / 2;
-                const distanceFromCenter = progressFromHorizon * halfArenaWidth;
-                
-                if (tree.side === 'left') {
-                    tree.x = ARENA_CENTER - distanceFromCenter;
-                } else {
-                    tree.x = ARENA_CENTER + distanceFromCenter;
-                }
-                
-                // Scale from TINY (0.05) at horizon to large (2.5) at bottom
-                tree.scale = 0.05 + (progressFromHorizon * 2.45);
-                
                 return tree.y < BASE_HEIGHT + 50;
             });
             
+            // Logs scroll down with simple collision
             logs = logs.filter(log => {
                 log.y += log.speed * currentSpeed;
-                const progressFromHorizon = (log.y - BASE_HEIGHT / 2) / (BASE_HEIGHT / 2);
-                log.scale = 0.25 + (progressFromHorizon * 2.25); // Bigger scaling
                 
-                const logSize = 150 * log.scale; // Increased from 120 to 150
-                if (log.y > player.y - 80 && log.y < player.y + 80 &&
+                const logSize = 60;
+                if (Math.abs(log.y - player.y) < logSize / 2 + player.height / 2 &&
                     Math.abs(log.x - player.x) < logSize / 2 + player.width / 2) {
                     player.health -= 4;
                     player.slowdownTimer = 1000;
@@ -1072,16 +1046,15 @@
                 return log.y < BASE_HEIGHT + 50;
             });
             
+            // Rats scroll down and drift toward player
             rats = rats.filter(rat => {
                 rat.y += rat.speed * currentSpeed;
-                const progressFromHorizon = (rat.y - BASE_HEIGHT / 2) / (BASE_HEIGHT / 2);
-                rat.scale = 0.25 + (progressFromHorizon * 2.25); // Much bigger scaling to match Chonx
                 
                 const dx = player.x - rat.x;
-                rat.x += Math.sign(dx) * 0.5;
+                rat.x += Math.sign(dx) * 0.8;
                 
-                const ratSize = 180 * rat.scale; // MUCH bigger - from 120 to 180 to match Chonx
-                if (rat.y > player.y - 80 && rat.y < player.y + 80 &&
+                const ratSize = 80;
+                if (Math.abs(rat.y - player.y) < ratSize / 2 + player.height / 2 &&
                     Math.abs(rat.x - player.x) < ratSize / 2 + player.width / 2) {
                     player.health -= 7;
                     player.slowdownTimer = 1500;
@@ -1093,15 +1066,14 @@
                 return rat.y < BASE_HEIGHT + 50;
             });
             
+            // Berries scroll down
             blueberries = blueberries.filter(berry => {
                 berry.y += berry.speed * currentSpeed;
-                const progressFromHorizon = (berry.y - BASE_HEIGHT / 2) / (BASE_HEIGHT / 2);
-                berry.scale = 0.3 + (progressFromHorizon * 1.7); // Bigger
                 berry.floatOffset += 0.1;
                 
-                const berrySize = 60 * berry.scale; // Increased from 50 to 60
-                if (berry.y > player.y - 80 && berry.y < player.y + 80 &&
-                    Math.abs(berry.x - player.x) < berrySize + player.width / 2) {
+                const berrySize = 30;
+                if (Math.abs(berry.y - player.y) < berrySize / 2 + player.height / 2 &&
+                    Math.abs(berry.x - player.x) < berrySize / 2 + player.width / 2) {
                     if (player.health < 67) {
                         player.health++;
                         playCollectSound();
@@ -1115,13 +1087,11 @@
             
             strawberries = strawberries.filter(berry => {
                 berry.y += berry.speed * currentSpeed;
-                const progressFromHorizon = (berry.y - BASE_HEIGHT / 2) / (BASE_HEIGHT / 2);
-                berry.scale = 0.3 + (progressFromHorizon * 1.7); // Bigger
                 berry.floatOffset += 0.1;
                 
-                const berrySize = 60 * berry.scale; // Increased from 50 to 60
-                if (berry.y > player.y - 80 && berry.y < player.y + 80 &&
-                    Math.abs(berry.x - player.x) < berrySize + player.width / 2) {
+                const berrySize = 30;
+                if (Math.abs(berry.y - player.y) < berrySize / 2 + player.height / 2 &&
+                    Math.abs(berry.x - player.x) < berrySize / 2 + player.width / 2) {
                     player.speedBoostTimer = 1000;
                     playBoostSound();
                     createParticles(berry.x, berry.y, '#ff0000', 8);
@@ -1131,10 +1101,9 @@
                 return berry.y < BASE_HEIGHT + 50;
             });
             
+            // Finish line scrolls down
             if (finishLine) {
                 finishLine.y += finishLine.speed * currentSpeed;
-                const progressFromHorizon = (finishLine.y - BASE_HEIGHT / 2) / (BASE_HEIGHT / 2);
-                finishLine.scale = 0.1 + (progressFromHorizon * 2.4);
                 
                 if (finishLine.y > player.y) {
                     gameState = 'win';
@@ -1148,7 +1117,7 @@
                 
                 for (let i = logs.length - 1; i >= 0; i--) {
                     const log = logs[i];
-                    const logSize = 150 * log.scale;
+                    const logSize = 60;
                     if (Math.abs(p.x - log.x) < logSize / 2 + p.size &&
                         Math.abs(p.y - log.y) < logSize / 2 + p.size) {
                         log.hits++;
@@ -1163,7 +1132,7 @@
                 
                 for (let i = rats.length - 1; i >= 0; i--) {
                     const rat = rats[i];
-                    const ratSize = 180 * rat.scale;
+                    const ratSize = 80;
                     if (Math.abs(p.x - rat.x) < ratSize / 2 + p.size &&
                         Math.abs(p.y - rat.y) < ratSize / 2 + p.size) {
                         rat.hits++;
@@ -1207,43 +1176,66 @@
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
             
-            // Draw background with zoom AND slow upward scroll
-            if (sprites.background && sprites.background.complete) {
-                const bgWidth = BASE_WIDTH * bgZoom;
-                const bgHeight = BASE_HEIGHT * bgZoom;
-                const bgX = (BASE_WIDTH - bgWidth) / 2;
-                // Very slow upward scroll
-                const bgY = (BASE_HEIGHT - bgHeight) / 2 - (gameTime * 0.003);
-                ctx.drawImage(sprites.background, bgX, bgY, bgWidth, bgHeight);
-            }
+            // Draw simple snow path background (can be replaced with image later)
+            // Dark blue snow on sides
+            ctx.fillStyle = '#4a5f88';
+            ctx.fillRect(0, 0, ARENA_LEFT, BASE_HEIGHT);
+            ctx.fillRect(ARENA_RIGHT, 0, BASE_WIDTH - ARENA_RIGHT, BASE_HEIGHT);
             
+            // Light path in middle with scrolling stripes
+            ctx.fillStyle = '#e8f0ff';
+            ctx.fillRect(ARENA_LEFT, 0, ARENA_WIDTH, BASE_HEIGHT);
+            
+            // Scrolling center line (dashed)
+            ctx.strokeStyle = '#ffff00';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([20, 20]);
+            ctx.lineDashOffset = -(gameTime * 0.1) % 40;
+            ctx.beginPath();
+            ctx.moveTo(ARENA_CENTER, 0);
+            ctx.lineTo(ARENA_CENTER, BASE_HEIGHT);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Edge lines
+            ctx.strokeStyle = '#aabbcc';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(ARENA_LEFT, 0);
+            ctx.lineTo(ARENA_LEFT, BASE_HEIGHT);
+            ctx.moveTo(ARENA_RIGHT, 0);
+            ctx.lineTo(ARENA_RIGHT, BASE_HEIGHT);
+            ctx.stroke();
+            
+            // Draw control panel separators
             ctx.fillStyle = 'rgba(0, 255, 255, 0.1)';
             ctx.fillRect(0, 0, ARENA_LEFT, BASE_HEIGHT);
             ctx.fillRect(ARENA_RIGHT, 0, BASE_WIDTH - ARENA_RIGHT, BASE_HEIGHT);
             
             trees.forEach(tree => {
-                const size = 150 * tree.scale;
+                const size = 60; // Fixed size
                 if (sprites.tree && sprites.tree.complete) {
-                    ctx.drawImage(sprites.tree, tree.x - size / 2, tree.y - size, size, size);
+                    ctx.drawImage(sprites.tree, tree.x - size / 2, tree.y - size / 2, size, size);
                 }
             });
             
             if (finishLine) {
-                const size = 350 * finishLine.scale;
+                const width = 200;
+                const height = 60;
                 if (sprites.finishBanner && sprites.finishBanner.complete) {
-                    ctx.drawImage(sprites.finishBanner, finishLine.x - size / 2, finishLine.y, size, size * 0.3);
+                    ctx.drawImage(sprites.finishBanner, finishLine.x - width / 2, finishLine.y, width, height);
                 }
             }
             
             logs.forEach(log => {
-                const size = 150 * log.scale;
+                const size = 60;
                 if (sprites.log && sprites.log.complete) {
                     ctx.drawImage(sprites.log, log.x - size / 2, log.y - size / 2, size, size);
                 }
             });
             
             rats.forEach(rat => {
-                const size = 180 * rat.scale;
+                const size = 80;
                 if (sprites.rat && sprites.rat.complete) {
                     ctx.save();
                     ctx.translate(rat.x, rat.y);
@@ -1254,16 +1246,16 @@
             });
             
             blueberries.forEach(berry => {
-                const size = 60 * berry.scale;
-                const floatY = Math.sin(berry.floatOffset) * 5;
+                const size = 30;
+                const floatY = Math.sin(berry.floatOffset) * 3;
                 if (sprites.blueberry && sprites.blueberry.complete) {
                     ctx.drawImage(sprites.blueberry, berry.x - size / 2, berry.y - size / 2 + floatY, size, size);
                 }
             });
             
             strawberries.forEach(berry => {
-                const size = 60 * berry.scale;
-                const floatY = Math.sin(berry.floatOffset) * 5;
+                const size = 30;
+                const floatY = Math.sin(berry.floatOffset) * 3;
                 if (sprites.strawberry && sprites.strawberry.complete) {
                     ctx.drawImage(sprites.strawberry, berry.x - size / 2, berry.y - size / 2 + floatY, size, size);
                 }
