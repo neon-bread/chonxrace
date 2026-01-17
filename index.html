@@ -892,13 +892,20 @@
         function spawnRat() {
             const x = ARENA_LEFT + 50 + Math.random() * (ARENA_WIDTH - 100);
             
+            // Random movement pattern
+            const patterns = ['straight', 'weave', 'erratic'];
+            const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+            
             rats.push({
                 x: x,
                 y: -50,
                 speed: 2.5,
                 hits: 0,
-                maxHits: 1, // 1 hit to destroy
-                rotation: 0
+                maxHits: 1,
+                rotation: 0,
+                pattern: pattern,
+                patternOffset: Math.random() * Math.PI * 2, // For sine wave patterns
+                patternSpeed: 0.5 + Math.random() * 1 // How fast they move side to side
             });
         }
 
@@ -980,13 +987,16 @@
         function updatePlaying(deltaTime) {
             gameTime += deltaTime;
             
-            let currentSpeed = player.speed;
+            // Progressive speed increase: starts at 1.0x, reaches 2.0x at 60 seconds
+            const speedMultiplier = Math.min(1.0 + (gameTime / 60000), 2.0);
+            
+            let currentSpeed = player.speed * speedMultiplier;
             
             if (player.speedBoostTimer > 0) {
-                currentSpeed = 1.25;
+                currentSpeed = 1.25 * speedMultiplier;
                 player.speedBoostTimer -= deltaTime;
             } else if (player.slowdownTimer > 0) {
-                currentSpeed = 0.75;
+                currentSpeed = 0.75 * speedMultiplier;
                 player.slowdownTimer -= deltaTime;
             }
             
@@ -1047,17 +1057,31 @@
                 return log.y < BASE_HEIGHT + 50;
             });
             
-            // Rats scroll down and drift toward player
+            // Rats scroll down with varied movement patterns
             rats = rats.filter(rat => {
                 rat.y += rat.speed * currentSpeed;
                 
-                const dx = player.x - rat.x;
-                rat.x += Math.sign(dx) * 0.8;
+                // Apply movement pattern
+                rat.patternOffset += 0.05 * rat.patternSpeed;
+                
+                if (rat.pattern === 'straight') {
+                    // Just go straight down
+                } else if (rat.pattern === 'weave') {
+                    // Smooth sine wave side to side
+                    rat.x += Math.sin(rat.patternOffset) * 1.5;
+                } else if (rat.pattern === 'erratic') {
+                    // Frantic zigzag
+                    rat.x += Math.sin(rat.patternOffset) * 3;
+                }
+                
+                // Keep in bounds
+                if (rat.x < ARENA_LEFT + 25) rat.x = ARENA_LEFT + 25;
+                if (rat.x > ARENA_RIGHT - 25) rat.x = ARENA_RIGHT - 25;
                 
                 const ratSize = 50;
                 if (Math.abs(rat.y - player.y) < ratSize / 2 + player.height / 2 &&
                     Math.abs(rat.x - player.x) < ratSize / 2 + player.width / 2) {
-                    player.health -= 1; // 1 HP damage
+                    player.health -= 1;
                     player.slowdownTimer = 1500;
                     playCollisionSound();
                     createParticles(rat.x, rat.y, '#ff00ff', 12);
