@@ -1051,7 +1051,7 @@
                     Math.abs(log.x - player.x) < logSize / 2 + player.width / 2) {
                     player.health -= 1;
                     player.perfectRun = false; // Lost perfect run
-                    player.slowdownTimer = 1000;
+                    player.slowdownTimer = 2500;
                     playCollisionSound();
                     createParticles(log.x, log.y, '#8B4513', 8);
                     return false;
@@ -1086,7 +1086,7 @@
                     Math.abs(rat.x - player.x) < ratSize / 2 + player.width / 2) {
                     player.health -= 1;
                     player.perfectRun = false; // Lost perfect run
-                    player.slowdownTimer = 1500;
+                    player.slowdownTimer = 3750;
                     playCollisionSound();
                     createParticles(rat.x, rat.y, '#ff00ff', 12);
                     return false;
@@ -1336,7 +1336,7 @@
             
             // Score display
             ctx.fillStyle = '#00ff00';
-            ctx.fillText(`SCORE: ${player.score}`, hudX, hudY + 60);
+            ctx.fillText(`SCORE: ${player.score}`, hudX, hudY + 75);
             
             // Health bar
             const barWidth = 80;
